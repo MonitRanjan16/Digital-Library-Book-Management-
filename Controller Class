@@ -1,0 +1,61 @@
+package com.monit.controller;
+
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import com.monit.entity.Book;
+import com.monit.service.BookService;
+
+@RestController
+@RequestMapping("/books")
+@CrossOrigin("*") // Allow all origins (useful for frontend connection)
+public class BookController {
+
+    @Autowired
+    private BookService bookService;
+
+    @GetMapping
+    public ResponseEntity<List<Book>> getAllBooks() {
+        List<Book> books = bookService.getAllBooks();
+        return ResponseEntity.ok(books);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Book> getBookById(@PathVariable Long id) {
+        return bookService.getBookById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<Book> getBookByTitle(@RequestParam String title) {
+        return bookService.getBookByTitle(title)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/add")
+    public ResponseEntity<Book> addBook(@RequestBody Book book) {
+        Book savedBook = bookService.addBook(book);
+        return ResponseEntity.ok(savedBook);
+    }
+
+    @PutMapping("/update/{id}")
+    public ResponseEntity<Book> updateBook(@PathVariable Long id, @RequestBody Book bookDetails) {
+        return bookService.getBookById(id).map(book -> {
+            book.setTitle(bookDetails.getTitle());
+            book.setAuthor(bookDetails.getAuthor());
+            book.setGenre(bookDetails.getGenre());
+            book.setAvailability(bookDetails.getAvailability());
+            return ResponseEntity.ok(bookService.updateBook(id, book));
+        }).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<String> deleteBook(@PathVariable Long id) {
+        bookService.deleteBook(id);
+        return ResponseEntity.ok("Book deleted successfully.");
+    }
+}
